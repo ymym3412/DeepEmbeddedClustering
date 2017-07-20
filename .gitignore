@@ -99,3 +99,11 @@ ENV/
 
 # mypy
 .mypy_cache/
+*.model
+*.png
+pip-selfcheck.json
+.idea
+Include/
+Scripts/
+tcl/
+man/
