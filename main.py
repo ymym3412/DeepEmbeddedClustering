@@ -83,7 +83,7 @@ def main():
     else:
         centroids = kmeans.cluster_centers_
 
-    model.add_centroid(centroids)
+    model.add_centroids(centroids)
     optimizer = optimizers.MomentumSGD(lr=0.01)
     optimizer.setup(model)
 

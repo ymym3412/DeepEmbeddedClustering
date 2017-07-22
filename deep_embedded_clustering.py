@@ -31,12 +31,11 @@ class DeepEmbeddedClustering(chainer.ChainList):
         return concat_param
 
 
-    def add_centroid(self, centroids):
-        with self.init_scope():
-            for i, centroid in enumerate(centroids):
-                name = "u{}".format(i+1)
-                initializer = LinearInitializer(centroid)
-                self.add_param(name, centroid.shape, initializer=initializer)
+    def add_centroids(self, centroids):
+        for i, centroid in enumerate(centroids):
+            name = "u{}".format(i+1)
+            initializer = LinearInitializer(centroid)
+            self.add_param(name, centroid.shape, initializer=initializer)
 
 
 class LinearInitializer(Initializer):
@@ -46,5 +45,4 @@ class LinearInitializer(Initializer):
 
     def __call__(self, array):
         xp = cuda.get_array_module(array)
-        k = xp.array([self.array], dtype=xp.float32)
-        array[:] = k
+        array[:] = xp.array([self.array], dtype=xp.float32)
