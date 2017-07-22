@@ -14,11 +14,11 @@ from chainer.functions.loss.mean_squared_error import mean_squared_error
 import cupy as cp
 import numpy as np
 
-import extensions
+from change_learning_rate import ChangeLearningRate
 from stacked_denoising_autoencoder import StackedDenoisingAutoEncoder
 
 
-def pretrain():
+def pretraining():
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu', type=int, default=-1)
     parser.add_argument('--seed', type=int, default=0)
@@ -53,7 +53,7 @@ def pretrain():
         trainer = training.Trainer(updater, (50000, "iteration"), out="mnist_result")
         trainer.extend(extensions.LogReport())
         trainer.extend(extensions.PrintReport(['iteration', 'main/loss', 'elapsed_time']))
-        trainer.extend(extensions.ChangeLearningRate(), trigger=(20000, "iteration"))
+        trainer.extend(ChangeLearningRate(), trigger=(20000, "iteration"))
         trainer.run()
         train = dae.encode(train).data
 
@@ -74,7 +74,7 @@ def pretrain():
         trainer = training.Trainer(updater, (100000, "iteration"), out="mnist_result")
         trainer.extend(extensions.LogReport())
         trainer.extend(extensions.PrintReport(['iteration', 'main/loss', 'elapsed_time']))
-        trainer.extend(extensions.ChangeLearningRate(), trigger=(20000, "iteration"))
+        trainer.extend(ChangeLearningRate(), trigger=(20000, "iteration"))
         trainer.run()
 
     outfile = "StackedDenoisingAutoEncoder-seed{}.model".format(seed)
@@ -82,4 +82,4 @@ def pretrain():
 
 
 if __name__ == '__main__':
-    pretrain()
+    pretraining()
