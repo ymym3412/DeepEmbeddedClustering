@@ -7,6 +7,7 @@ from chainer import optimizers
 from chainer import training
 from chainer import serializers
 from chainer.training import extensions
+from chainer.dataset import convert
 from chainer.functions.loss.mean_squared_error import mean_squared_error
 import cupy as cp
 import numpy as np
@@ -18,20 +19,22 @@ from StackedDenoisingAutoEncoder import StackedDenoisingAutoEncoder
 
 def pretrain():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu', type=int, default=0)
+    parser.add_argument('--gpu', type=int, default=-1)
     parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--batchsize', type=int, default=256)
     args = parser.parse_args()
 
     xp = np
     gpu_id = args.gpu
+    seed = args.seed
     train, _ = mnist.get_mnist()
-    train = xp.array([data[0] for data in train])
-    batchsize = 256
+    train, _ = convert.concat_examples(train, device=gpu_id)
+    batchsize = args.batchsize
     model = StackedDenoisingAutoEncoder(input_dim=train.shape[1])
     if chainer.cuda.available and args.gpu >= 0:
         xp = cp
         model.to_gpu(gpu_id)
-    xp.random.seed(args.seed)
+    xp.random.seed(seed)
 
     # Layer-Wise Pretrain
     print("Layer-Wise Pretrain")
@@ -57,7 +60,7 @@ def pretrain():
     print("fine tuning")
     with chainer.using_config("train", False):
         train, _ = mnist.get_mnist()
-        train = cp.array([data[0] for data in train])
+        train, _ = convert.concat_examples(train, device=gpu_id)
         train_tuple = tuple_dataset.TupleDataset(train, train)
         train_iter = iterators.SerialIterator(train_tuple, batchsize)
         model = L.Classifier(model, lossfun=mean_squared_error)
@@ -73,7 +76,7 @@ def pretrain():
         trainer.extend(Extensions.ChangeLearningRate(), trigger=(20000, "iteration"))
         trainer.run()
 
-    outfile = "StackedDenoisingAutoEncoder.model"
+    outfile = "StackedDenoisingAutoEncoder-seed{}.model".format(seed)
     serializers.save_npz(outfile, model.predictor)
 
 

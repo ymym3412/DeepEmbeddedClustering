@@ -14,9 +14,12 @@ from Kernel import tdistribution_kl_divergence
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import argparse
+import os
 
 
-def plot_tsne(model, data, labels, seed, iter_num):
+def plot_tsne(model, data, labels, seed, iter_num, save_dir):
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
     with chainer.using_config("train", False):
         z = model(data)
         z.to_cpu()
@@ -35,9 +38,9 @@ def plot_tsne(model, data, labels, seed, iter_num):
         plt.figure(figsize=(40, 40))
         plt.xlim(x_min, x_max)
         plt.ylim(y_min, y_max)
-        plt.scatter(x1, y1, c=list(labels))
+        plt.scatter(x1, y1, s=500, alpha=0.8, c=list(labels), cmap="Paired")
         plt.colorbar()
-        filename = "output_seed{}_iter{}.png".format(seed, iter_num)
+        filename = "{}/output_seed{}_iter{}.png".format(save_dir, seed, iter_num)
         plt.savefig(filename)
         print("save png")
 
@@ -46,18 +49,21 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--gpu', type=int, default=-1)
     parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--model_seed', type=int, default=0)
     parser.add_argument('--cluster', type=int, default=10)
-    parser.add_argument('--stop_iter', type=int, default=200)
+    parser.add_argument('--stop_iter', type=int, default=30)
     args = parser.parse_args()
+
 
     gpu_id = args.gpu
     seed = args.seed
+    model_seed = args.model_seed
     train, _ = mnist.get_mnist()
     concat_train_data, concat_train_label = convert.concat_examples(train, device=gpu_id)
 
     # Load Pretrain Model
     sdae = StackedDenoisingAutoEncoder(concat_train_data.shape[1])
-    serializers.load_npz("StackedDenoisingAutoEncoder-seed1.model", sdae)
+    serializers.load_npz("StackedDenoisingAutoEncoder-seed{}.model".format(args.model_seed), sdae)
     chains = [dae for dae in sdae.children()]
     model = DeepEmbeddedClustering(chains)
     if chainer.cuda.available and args.gpu >= 0:
@@ -100,9 +106,8 @@ def main():
                 new_labels = kmeans.labels_
                 diff = float(len(np.where(np.equal(new_labels, last_labels) == False)[0])) / Z.shape[0]
                 last_labels = new_labels
-                plot_tsne(model, concat_train_data[:1000], concat_train_label[:1000], seed, i)
+                plot_tsne(model, concat_train_data[:500], concat_train_label[:500], seed, i, "modelseed{}_seed{}".format(model_seed, seed))
 
-            i += 1
             if diff <= 0.001:
                 break
 
@@ -110,7 +115,9 @@ def main():
                 print("Couldn't reach tol")
                 break
 
-        outfile = "DeepEmbeddedClustering.model"
+            i += 1
+
+        outfile = "DeepEmbeddedClustering_modelseed{}_seed{}.model".format(model_seed, seed)
         serializers.save_npz(outfile, model)
 
 if __name__ == '__main__':
