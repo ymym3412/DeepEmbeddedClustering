@@ -13,8 +13,8 @@ import cupy as cp
 import numpy as np
 import argparse
 
-import Extensions
-from StackedDenoisingAutoEncoder import StackedDenoisingAutoEncoder
+import extensions
+from stacked_denoising_autoencoder import StackedDenoisingAutoEncoder
 
 
 def pretrain():
@@ -52,7 +52,7 @@ def pretrain():
         trainer = training.Trainer(updater, (50000, "iteration"), out="mnist_result")
         trainer.extend(extensions.LogReport())
         trainer.extend(extensions.PrintReport(['iteration', 'main/loss', 'elapsed_time']))
-        trainer.extend(Extensions.ChangeLearningRate(), trigger=(20000, "iteration"))
+        trainer.extend(extensions.ChangeLearningRate(), trigger=(20000, "iteration"))
         trainer.run()
         train = dae.encode(train).data
 
@@ -73,7 +73,7 @@ def pretrain():
         trainer = training.Trainer(updater, (100000, "iteration"), out="mnist_result")
         trainer.extend(extensions.LogReport())
         trainer.extend(extensions.PrintReport(['iteration', 'main/loss', 'elapsed_time']))
-        trainer.extend(Extensions.ChangeLearningRate(), trigger=(20000, "iteration"))
+        trainer.extend(extensions.ChangeLearningRate(), trigger=(20000, "iteration"))
         trainer.run()
 
     outfile = "StackedDenoisingAutoEncoder-seed{}.model".format(seed)

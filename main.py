@@ -8,9 +8,9 @@ from chainer.dataset import convert
 from sklearn.cluster import KMeans
 import numpy as np
 
-from StackedDenoisingAutoEncoder import StackedDenoisingAutoEncoder
-from DeepEmbeddedClustering import DeepEmbeddedClustering
-from Kernel import tdistribution_kl_divergence
+from stacked_denoising_autoencoder import StackedDenoisingAutoEncoder
+from deep_embedded_clustering import DeepEmbeddedClustering
+from tdistribution_kl_divergence import tdistribution_kl_divergence
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 import argparse
