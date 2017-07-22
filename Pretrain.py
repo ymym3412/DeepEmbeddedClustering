@@ -1,4 +1,6 @@
 # coding:utf-8
+import argparse
+
 import chainer
 import chainer.links as L
 from chainer.datasets import mnist, tuple_dataset
@@ -11,7 +13,6 @@ from chainer.dataset import convert
 from chainer.functions.loss.mean_squared_error import mean_squared_error
 import cupy as cp
 import numpy as np
-import argparse
 
 import extensions
 from stacked_denoising_autoencoder import StackedDenoisingAutoEncoder

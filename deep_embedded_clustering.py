@@ -1,9 +1,11 @@
 # coding: utf-8
+import re
+
 import chainer
 import chainer.functions as F
 from chainer import Initializer
 from chainer import cuda
-import re
+
 
 class DeepEmbeddedClustering(chainer.ChainList):
     def __init__(self, chains):

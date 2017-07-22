@@ -1,7 +1,8 @@
 # coding:utf-8
+from itertools import chain, repeat
+
 import chainer
 from chainer import cuda
-from itertools import chain, repeat
 
 
 class TdistributionKLDivergence(chainer.Function):

@@ -1,4 +1,7 @@
 # coding:utf-8
+import argparse
+import os
+
 import chainer
 from chainer.datasets import mnist
 from chainer import optimizers
@@ -6,15 +9,13 @@ from chainer import serializers
 from chainer import cuda
 from chainer.dataset import convert
 from sklearn.cluster import KMeans
+from sklearn.manifold import TSNE
 import numpy as np
+import matplotlib.pyplot as plt
 
 from stacked_denoising_autoencoder import StackedDenoisingAutoEncoder
 from deep_embedded_clustering import DeepEmbeddedClustering
 from tdistribution_kl_divergence import tdistribution_kl_divergence
-import matplotlib.pyplot as plt
-from sklearn.manifold import TSNE
-import argparse
-import os
 
 
 def plot_tsne(model, data, labels, seed, iter_num, save_dir):
