@@ -18,7 +18,7 @@ $ python pretraining.py --gpu=0 --seed=0
 
 ### Training model
 ```shell
-4 python main.py --gpu=0 --seed=0 --mode_seed=0 --cluster=10 
+$ python main.py --gpu=0 --seed=0 --model_seed=0 --cluster=10 
 ```
 `--gpu` and `--seed` means same as before. `--model_seed` is seed number when pretraing.  
 Every five iteration, save embedding result in directory like `modelseed0_seed0/`.  
