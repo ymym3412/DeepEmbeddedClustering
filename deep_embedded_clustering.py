@@ -1,5 +1,6 @@
 # coding: utf-8
 import re
+from itertools import chain, repeat
 
 import chainer
 import chainer.functions as F
@@ -36,6 +37,17 @@ class DeepEmbeddedClustering(chainer.ChainList):
             name = "u{}".format(i+1)
             initializer = LinearInitializer(centroid)
             self.add_param(name, centroid.shape, initializer=initializer)
+
+
+    def predict_label(self, x):
+        z = self(x).data
+        centroids = self.get_centroids().data
+        xp = cuda.get_array_module(z)
+        dist_matrix = xp.linalg.norm(xp.vstack(chain.from_iterable(map(lambda v: repeat(v, centroids.shape[0]), z)))\
+                                     - xp.vstack(repeat(centroids, z.shape[0])), axis=1).reshape(z.shape[0], centroids.shape[0])
+        q_matrix = (xp.power((1 + dist_matrix), -1).T / xp.power((1 + dist_matrix), -1).sum(axis=1)).T
+        return xp.argmax(q_matrix, axis=1)
+
 
 
 class LinearInitializer(Initializer):

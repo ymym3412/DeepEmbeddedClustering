@@ -25,8 +25,15 @@ def plot_tsne(model, data, labels, seed, iter_num, save_dir):
         z = model(data)
         z.to_cpu()
         z = z.data
+        centroids = model.get_centroids()
+        centroids.to_cpu()
+        centroids = centroids.data
+        centroids_num = centroids.shape[0]
+        data = np.vstack((z, centroids))
         tsne = TSNE(n_components=2, random_state=1, perplexity=30, n_iter=1000)
-        x = tsne.fit_transform(z)
+        x = tsne.fit_transform(data)
+        x = x[:-centroids_num]
+        embed_centroids = x[-centroids_num:]
 
         x1 = [data[0] for data in x]
         y1 = [data[1] for data in x]
@@ -36,11 +43,15 @@ def plot_tsne(model, data, labels, seed, iter_num, save_dir):
         y_max = max(y1)
         y_min = min(y1)
 
+        embx = [data[0] for data in embed_centroids]
+        emvy = [data[1] for data in embed_centroids]
+
         plt.figure(figsize=(40, 40))
         plt.xlim(x_min, x_max)
         plt.ylim(y_min, y_max)
         plt.scatter(x1, y1, s=500, alpha=0.8, c=list(labels), cmap="Paired")
         plt.colorbar()
+        plt.scatter(embx, emvy, s=1000, c="black", marker="^")
         filename = "{}/output_seed{}_iter{}.png".format(save_dir, seed, iter_num)
         plt.savefig(filename)
         print("save png")
@@ -55,12 +66,13 @@ def main():
     parser.add_argument('--stop_iter', type=int, default=30)
     args = parser.parse_args()
 
-
     gpu_id = args.gpu
     seed = args.seed
     model_seed = args.model_seed
+    np.random.seed(seed)
     train, _ = mnist.get_mnist()
     concat_train_data, concat_train_label = convert.concat_examples(train, device=gpu_id)
+    perm = np.random.permutation(concat_train_data.shape[0])
 
     # Load Pretrain Model
     sdae = StackedDenoisingAutoEncoder(concat_train_data.shape[1])
@@ -75,7 +87,7 @@ def main():
     Z = model(concat_train_data)
     Z.to_cpu()
     Z = Z.data
-    kmeans = KMeans(n_clusters=k, random_state=seed).fit(Z)
+    kmeans = KMeans(n_clusters=k, n_init=20, random_state=seed).fit(Z)
     last_labels = kmeans.labels_
 
     if chainer.cuda.available and args.gpu >= 0:
@@ -96,18 +108,17 @@ def main():
             Z = model(concat_train_data)
             centroids = model.get_centroids()
             loss = tdistribution_kl_divergence(Z, centroids)
+            print("loss {}".format(loss.data))
             model.cleargrads()
             loss.backward()
             optimizer.update()
             if i % 5 == 0:
-                Z = model(concat_train_data)
-                Z.to_cpu()
-                Z = Z.data
-                kmeans = KMeans(n_clusters=k, random_state=seed).fit(Z)
-                new_labels = kmeans.labels_
+                new_labels = model.predict_label(concat_train_data)
+                new_labels = cuda.to_cpu(new_labels)
                 diff = float(len(np.where(np.equal(new_labels, last_labels) == False)[0])) / Z.shape[0]
                 last_labels = new_labels
-                plot_tsne(model, concat_train_data[:500], concat_train_label[:500], seed, i, "modelseed{}_seed{}".format(model_seed, seed))
+                plot_tsne(model, concat_train_data[perm[:500]], concat_train_label[perm[:500]], seed, i, "modelseed{}_seed{}".format(model_seed, seed))
+                print("diff {}".format(diff))
 
             if diff <= 0.001:
                 break
